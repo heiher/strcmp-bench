@@ -39,10 +39,10 @@ loop_bench (const char *p1, const char *p2)
 	return r;
 }
 
-void
-master_main (void)
+static void
+run_bench (void)
 {
-	int r;
+	int i, j, r;
 	char *p1, *p2, buf[32];
 	unsigned long cycles;
 
@@ -51,31 +51,40 @@ master_main (void)
 	p1 = (char *)(((unsigned long) str + 8) & ~7UL);
 	p2 = (char *)(((unsigned long) str + 8 + 8) & ~7UL);
 
-	p1 += 7;
-	p2 += 7;
+	for (i=0; i<8; i++) {
+		for (j=0; j<8; j++) {
+			disable_perf ();
+			set_perf (0);
+			enable_perf ();
 
-	disable_perf ();
-	set_perf (0);
-	enable_perf ();
+			r = loop_bench (p1 + i, p2 + j);
 
-	r = loop_bench (p1, p2);
+			cycles = get_perf ();
+			disable_perf ();
 
-	cycles = get_perf ();
-	disable_perf ();
+			puts ("s1: ");
+			ultostr (buf, (unsigned long) p1 + i);
+			puts (buf);
+			puts (" s2: ");
+			ultostr (buf, (unsigned long) p2 + j);
+			puts (buf);
+			puts (" r: ");
+			ultostr (buf, (unsigned long) r);
+			puts (buf);
+			puts (" cycles: ");
+			ultostr (buf, cycles);
+			puts (buf);
+			puts ("\r\n");
+		}
+	}
+}
 
-	puts ("s1: ");
-	ultostr (buf, (unsigned long) p1);
-	puts (buf);
-	puts (" s2: ");
-	ultostr (buf, (unsigned long) p2);
-	puts (buf);
-	puts (" r: ");
-	ultostr (buf, (unsigned long) r);
-	puts (buf);
-	puts (" cycles: ");
-	ultostr (buf, cycles);
-	puts (buf);
-	puts ("\r\n");
+void
+master_main (void)
+{
+	run_bench ();
+	puts ("FINISH\r\n");
+	while (1);
 }
 
 void
